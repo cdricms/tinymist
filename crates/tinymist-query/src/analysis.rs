@@ -20,6 +20,8 @@ pub mod link_expr;
 pub use link_expr::*;
 pub mod definition;
 pub use definition::*;
+pub mod label_site;
+pub use label_site::*;
 pub mod signature;
 pub use signature::*;
 pub mod semantic_tokens;

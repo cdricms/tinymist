@@ -1,0 +1,103 @@
+---
+source: crates/tinymist-query/src/completion.rs
+description: Completion on p (234..235)
+expression: "JsonRepr::new_pure(results)"
+input_file: crates/tinymist-query/src/fixtures/completion/label_scoped_args.typ
+---
+[
+ {
+  "isIncomplete": false,
+  "items": [
+   {
+    "kind": 18,
+    "label": "portique",
+    "sortText": "000",
+    "textEdit": {
+     "newText": "portique>",
+     "range": {
+      "end": {
+       "character": 23,
+       "line": 8
+      },
+      "start": {
+       "character": 22,
+       "line": 8
+      }
+     }
+    }
+   },
+   {
+    "kind": 18,
+    "label": "passages",
+    "sortText": "001",
+    "textEdit": {
+     "newText": "passages>",
+     "range": {
+      "end": {
+       "character": 23,
+       "line": 8
+      },
+      "start": {
+       "character": 22,
+       "line": 8
+      }
+     }
+    }
+   },
+   {
+    "kind": 18,
+    "label": "adherent",
+    "sortText": "002",
+    "textEdit": {
+     "newText": "adherent>",
+     "range": {
+      "end": {
+       "character": 23,
+       "line": 8
+      },
+      "start": {
+       "character": 22,
+       "line": 8
+      }
+     }
+    }
+   },
+   {
+    "kind": 18,
+    "label": "annuler",
+    "sortText": "003",
+    "textEdit": {
+     "newText": "annuler>",
+     "range": {
+      "end": {
+       "character": 23,
+       "line": 8
+      },
+      "start": {
+       "character": 22,
+       "line": 8
+      }
+     }
+    }
+   },
+   {
+    "kind": 18,
+    "label": "reserver",
+    "sortText": "004",
+    "textEdit": {
+     "newText": "reserver>",
+     "range": {
+      "end": {
+       "character": 23,
+       "line": 8
+      },
+      "start": {
+       "character": 22,
+       "line": 8
+      }
+     }
+    }
+   }
+  ]
+ }
+]

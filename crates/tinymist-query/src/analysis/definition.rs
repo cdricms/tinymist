@@ -4,7 +4,9 @@ use typst::foundations::{Label, Selector, Type};
 use typst::introspection::Introspector;
 use typst_shim::syntax::source_range;
 
-use super::{InsTy, SharedContext, prelude::*};
+use super::{
+    InsTy, LabelSiteKind, SharedContext, find_label_definition, label_site_kind, prelude::*,
+};
 use crate::syntax::{Decl, DeclExpr, Expr, ExprInfo, SyntaxClass, VarClass};
 use crate::ty::DocSource;
 
@@ -107,6 +109,15 @@ pub fn definition(
                 ast::Expr::Label(r) => r.get(),
                 _ => return None,
             };
+
+            // A label used like a variable goes to where it is defined, e.g. `name: <a>`.
+            if matches!(ref_expr, ast::Expr::Label(..))
+                && label_site_kind(&node, &ctx.analysis.label_definition_params)
+                    == LabelSiteKind::Use
+                && let Some(def) = find_label_definition(ctx, source, name)
+            {
+                return Some(Definition::new(Decl::label(name, def.span).into(), None));
+            }
 
             let introspector = ctx.success_doc()?.introspector();
             bib_definition(ctx, introspector, name)

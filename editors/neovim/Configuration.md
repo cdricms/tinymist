@@ -130,6 +130,15 @@ This configuration item can be one of following types:
   - **Default**: `false`
 - **Default**: `"none"`
 
+## `labelDefinitionParams`
+
+The parameters whose label arguments define a label, like `name` in `node((0, 0), [A], name: <a>)`. The other label literals in code use it: they get completion, go to definition, hover, and lint checks for undefined or unused labels. Note: restarting the editor is required to change this setting.
+
+- **Type**: `array`
+- **Default**: `[
+    "name"
+  ]`
+
 ## `lint.enabled`
 
 Enable or disable lint checks. Note: restarting the editor is required to change this setting.

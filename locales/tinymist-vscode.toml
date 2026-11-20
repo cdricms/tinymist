@@ -1707,3 +1707,11 @@ zh = "保存文件时执行代码检查"
 [extension.tinymist.config.tinymist.lint.when.string.enum.onType]
 en = "Perform lint checks on type"
 zh = "标记文件时执行代码检查"
+
+[extension.tinymist.config.tinymist.labelDefinitionParams.title]
+en = "Parameters defining labels"
+zh = "定义标签的参数"
+
+[extension.tinymist.config.tinymist.labelDefinitionParams.desc]
+en = "The parameters whose label arguments define a label, like `name` in `node((0, 0), [A], name: <a>)`. The other label literals in code use it: they get completion, go to definition, hover, and lint checks for undefined or unused labels. Note: restarting the editor is required to change this setting."
+zh = "其标签参数用于定义标签的参数名，例如 `node((0, 0), [A], name: <a>)` 中的 `name`。代码中的其他标签字面量视为对其的使用：支持补全、跳转到定义、悬停提示，以及对未定义或未使用标签的代码检查。注意：更改此设置需要重新启动编辑器。"

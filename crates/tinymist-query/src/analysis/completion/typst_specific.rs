@@ -6,6 +6,7 @@ use typst::foundations::Symbol;
 use typst::syntax::is_valid_label_literal_id;
 
 use super::*;
+use crate::analysis::{LabelDefinitionParams, LabelSiteKind, label_site_kind, label_sites};
 impl CompletionPair<'_, '_, '_> {
     /// Add completions for all font families.
     pub fn font_completions(&mut self) {
@@ -169,8 +170,98 @@ impl CompletionPair<'_, '_, '_> {
         )
     }
 
+    /// Add completions for label literals written in the source: the ones
+    /// naming something (`name: <a>`) first, then by how close their enclosing
+    /// syntax is to the cursor.
+    ///
+    /// Unlike [`Self::label_completions`], this doesn't need a compiled
+    /// document, so it also works for labels that never land in the document,
+    /// like node names passed to drawing packages (`node((0, 0), [A], name:
+    /// <a>)`, then `edge(<a>, <b>)`).
+    pub fn scoped_label_completions(&mut self, node: &LinkedNode) {
+        let head = &self.cursor.text[..self.cursor.from];
+        let open = !head.ends_with('<');
+        let close = !self.cursor.after.starts_with('>');
+
+        // Walks up the scopes (arguments, blocks, markup) around the cursor and
+        // collects the labels of each one, the nearest scopes coming first.
+        let mut found = vec![];
+        let mut seen = HashMap::new();
+        let mut depth = 0;
+        let mut scope = node.parent().cloned();
+        while let Some(current) = scope {
+            if matches!(
+                current.kind(),
+                SyntaxKind::Args
+                    | SyntaxKind::Array
+                    | SyntaxKind::Dict
+                    | SyntaxKind::Code
+                    | SyntaxKind::CodeBlock
+                    | SyntaxKind::Markup
+                    | SyntaxKind::ContentBlock
+            ) {
+                collect_label_literals(
+                    &current,
+                    &self.worker.ctx.analysis.label_definition_params,
+                    node.offset(),
+                    depth,
+                    &mut seen,
+                    &mut found,
+                );
+                depth += 1;
+            }
+            scope = current.parent().cloned();
+        }
+
+        // Labels named through a variable (`let a = <a>`, then `name: a`) are
+        // named as well.
+        let params = &self.worker.ctx.analysis.label_definition_params;
+        let named_by_variable: HashSet<_> = label_sites(&self.cursor.source, params)
+            .into_iter()
+            .filter(|site| site.kind == LabelSiteKind::Named)
+            .map(|site| site.name)
+            .collect();
+        for lit in &mut found {
+            lit.named |= named_by_variable.contains(&lit.name);
+        }
+
+        // Labels naming something (`name: <a>`) come first, as the others mostly
+        // refer to them.
+        found.sort_by_key(|lit| (!lit.named, lit.depth));
+
+        // Keeps what the document knows about the labels that land in it.
+        let in_document: HashMap<EcoString, DynLabel> = self
+            .worker
+            .document
+            .map(|document| analyze_labels(document).0)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|label| (label.label.resolve().as_str().into(), label))
+            .collect();
+
+        for (rank, lit) in found.into_iter().enumerate() {
+            let in_document = in_document.get(&lit.name);
+            let (apply, additional_text_edits) =
+                self.label_completion_apply(&lit.name, open, close);
+            self.push_completion(Completion {
+                kind: CompletionKind::Reference,
+                apply: Some(apply),
+                additional_text_edits,
+                label: lit.name.clone(),
+                label_details: in_document.and_then(|label| label.label_desc.clone()),
+                filter_text: Some(lit.name),
+                detail: in_document
+                    .and_then(|label| label.detail.clone())
+                    .or_else(|| lit.named.then(|| "name".into())),
+                sort_text: Some(eco_format!("{rank:03}")),
+                ..Completion::default()
+            });
+        }
+    }
+
     /// Add completions for labels and references.
     pub fn label_completions_(&mut self, only_citation: bool, ref_label: bool) {
+        self.worker.typed_label_completion |= only_citation || ref_label;
         let Some(document) = self.worker.document else {
             return;
         };
@@ -367,4 +458,49 @@ pub struct ValueCompletionInfo<'a> {
     pub label_details: Option<EcoString>,
     pub docs: Option<&'a str>,
     pub bound_self: bool,
+}
+
+/// A label literal found in the source by [`collect_label_literals`].
+struct LabelLiteral {
+    /// The label, without the angle brackets.
+    name: EcoString,
+    /// How many scopes away from the cursor it was found.
+    depth: usize,
+    /// Whether it defines the label, like `name: <label>`.
+    named: bool,
+}
+
+/// Collects the label literals under `node`, skipping the one at `cursor_node`.
+/// A label already `seen` keeps its nearest scope, and is marked as named if any
+/// of its occurrences is.
+fn collect_label_literals(
+    node: &LinkedNode,
+    params: &LabelDefinitionParams,
+    cursor_node: usize,
+    depth: usize,
+    seen: &mut HashMap<EcoString, usize>,
+    found: &mut Vec<LabelLiteral>,
+) {
+    for child in node.children() {
+        if child.kind() == SyntaxKind::Label {
+            if child.offset() == cursor_node {
+                continue;
+            }
+            let text = child.leaf_text();
+            let name: EcoString = text.trim_start_matches('<').trim_end_matches('>').into();
+            if name.is_empty() {
+                continue;
+            }
+            let named = label_site_kind(&child, params) == LabelSiteKind::Named;
+            match seen.get(&name) {
+                Some(&idx) => found[idx].named |= named,
+                None => {
+                    seen.insert(name.clone(), found.len());
+                    found.push(LabelLiteral { name, depth, named });
+                }
+            }
+        } else {
+            collect_label_literals(&child, params, cursor_node, depth, seen, found);
+        }
+    }
 }

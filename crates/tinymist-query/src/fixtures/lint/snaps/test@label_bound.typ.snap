@@ -1,0 +1,15 @@
+---
+source: crates/tinymist-query/src/analysis.rs
+expression: "JsonRepr::new_redacted(result, &REDACT_LOC)"
+input_file: crates/tinymist-query/src/fixtures/lint/label_bound.typ
+---
+{
+ "s0.typ": [
+  {
+   "message": "label `<ouvrir>` is never used",
+   "range": "7:10:7:16",
+   "severity": 2,
+   "source": "typst"
+  }
+ ]
+}

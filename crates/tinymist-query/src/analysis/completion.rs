@@ -500,6 +500,8 @@ pub struct CompletionWorker<'a> {
     trigger_character: Option<char>,
     /// The set of cast completions seen so far.
     seen_casts: HashSet<u128>,
+    /// Whether only citations or references were completed as labels.
+    typed_label_completion: bool,
     /// The set of type completions seen so far.
     seen_types: HashSet<Ty>,
     /// The set of field completions seen so far.
@@ -522,6 +524,7 @@ impl<'a> CompletionWorker<'a> {
             incomplete: true,
             completions: vec![],
             seen_casts: HashSet::new(),
+            typed_label_completion: false,
             seen_types: HashSet::new(),
             seen_fields: HashSet::new(),
         })
@@ -900,6 +903,26 @@ impl CompletionPair<'_, '_, '_> {
         }
 
         self.worker.completions.append(&mut type_completions);
+
+        // Labels written nearby come first, e.g. node names passed to a package, unless
+        // a citation or a reference is expected.
+        if let Some(SyntaxContext::Label { node, .. }) = self.cursor.syntax_context.clone()
+            && mode == InterpretMode::Code
+            && !self.worker.typed_label_completion
+        {
+            let rest = std::mem::take(&mut self.worker.completions);
+            self.scoped_label_completions(&node);
+            let scoped: HashSet<_> = self
+                .worker
+                .completions
+                .iter()
+                .map(|c| c.label.clone())
+                .collect();
+            for mut compl in rest.into_iter().filter(|c| !scoped.contains(&c.label)) {
+                compl.sort_text = Some(eco_format!("{:03}", self.worker.completions.len()));
+                self.worker.completions.push(compl);
+            }
+        }
 
         crate::log_debug_ct!("sort completions after: {:#?}", self.worker.completions);
 

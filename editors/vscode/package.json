@@ -558,6 +558,17 @@
             "%extension.tinymist.config.tinymist.lint.when.string.enum.onType%"
           ]
         },
+        "tinymist.labelDefinitionParams": {
+          "title": "%extension.tinymist.config.tinymist.labelDefinitionParams.title%",
+          "markdownDescription": "%extension.tinymist.config.tinymist.labelDefinitionParams.desc%",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "name"
+          ]
+        },
         "tinymist.typingContinueCommentsOnNewline": {
           "title": "%extension.tinymist.config.tinymist.typingContinueCommentsOnNewline.title%",
           "markdownDescription": "%extension.tinymist.config.tinymist.typingContinueCommentsOnNewline.desc%",

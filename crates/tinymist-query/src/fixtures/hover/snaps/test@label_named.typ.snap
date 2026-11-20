@@ -1,0 +1,18 @@
+---
+source: crates/tinymist-query/src/hover.rs
+expression: content
+input_file: crates/tinymist-query/src/fixtures/hover/label_named.typ
+---
+Range: 7:37:7:47
+
+Label: `portique`
+
+
+
+======
+
+
+Defined on line 7:
+```typc
+cas((1, 0), [Passer le portique], name: <portique>)
+```

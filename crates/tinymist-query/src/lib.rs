@@ -7,7 +7,9 @@
 //! code. Currently it provides:
 //! + language queries defined by the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/).
 
-pub use analysis::{CompletionFeat, LocalContext, LocalContextGuard, LspWorldExt};
+pub use analysis::{
+    CompletionFeat, LabelDefinitionParams, LocalContext, LocalContextGuard, LspWorldExt,
+};
 pub use completion::{CompletionRequest, PostfixSnippet};
 pub use typlite::ColorTheme;
 pub use upstream::with_vm;

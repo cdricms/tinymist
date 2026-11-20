@@ -176,6 +176,15 @@ Show inline decorations indicating package version status (latest, upgradable, o
 - **Type**: `boolean`
 - **Default**: `true`
 
+## `tinymist.labelDefinitionParams`
+
+The parameters whose label arguments define a label, like `name` in `node((0, 0), [A], name: <a>)`. The other label literals in code use it: they get completion, go to definition, hover, and lint checks for undefined or unused labels. Note: restarting the editor is required to change this setting.
+
+- **Type**: `array`
+- **Default**: `[
+    "name"
+  ]`
+
 ## `tinymist.lint.enabled`
 
 Enable or disable lint checks. Note: restarting the editor is required to change this setting.

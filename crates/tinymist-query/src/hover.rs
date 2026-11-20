@@ -6,7 +6,10 @@ use tinymist_world::package::{PackageSpec, PackageSpecExt};
 use typst::foundations::repr::separated_list;
 use typst_shim::syntax::LinkedNodeExt;
 
-use crate::analysis::get_link_exprs_in;
+use crate::analysis::{
+    LabelSiteKind, describe_label_definition, find_label_definition, get_link_exprs_in,
+    label_site_kind,
+};
 use crate::bib::{RenderedBibCitation, render_citation_string};
 use crate::jump_from_cursor;
 use crate::package::parse_package_import;
@@ -211,6 +214,16 @@ impl HoverWorker<'_> {
                         .push(format!("```typc\n{}\n```", truncated_repr(&val)));
                 } else {
                     self.def.push(format!("Label: `{}`\n", def.name()));
+                    if let crate::syntax::SyntaxClass::Label { node, .. } = &syntax
+                        && label_site_kind(node, &self.ctx.analysis.label_definition_params)
+                            == LabelSiteKind::Use
+                        && let Some(found) =
+                            find_label_definition(self.ctx.shared(), &self.source, def.name())
+                        && let Some(desc) =
+                            describe_label_definition(self.ctx.shared(), self.source.id(), &found)
+                    {
+                        self.def.push(desc);
+                    }
                 }
             }
             BibEntry(..) => {

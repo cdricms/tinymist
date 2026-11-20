@@ -1,0 +1,18 @@
+---
+source: crates/tinymist-query/src/hover.rs
+expression: content
+input_file: crates/tinymist-query/src/fixtures/hover/label_named_import.typ
+---
+Range: 5:25:5:35
+
+Label: `adherent`
+
+
+
+======
+
+
+Defined in `acteurs.typ`, line 2:
+```typc
+f(name: <adherent>, ..args)
+```

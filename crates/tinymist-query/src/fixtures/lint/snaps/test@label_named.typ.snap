@@ -1,0 +1,21 @@
+---
+source: crates/tinymist-query/src/analysis.rs
+expression: "JsonRepr::new_redacted(result, &REDACT_LOC)"
+input_file: crates/tinymist-query/src/fixtures/lint/label_named.typ
+---
+{
+ "s0.typ": [
+  {
+   "message": "label `<isole>` is never used",
+   "range": "8:10:8:17",
+   "severity": 2,
+   "source": "typst"
+  },
+  {
+   "message": "label `<supprime>` is not defined\nHint: name something with `name: <supprime>`, or attach the label to content",
+   "range": "9:16:9:26",
+   "severity": 2,
+   "source": "typst"
+  }
+ ]
+}

@@ -1,0 +1,67 @@
+---
+source: crates/tinymist-query/src/completion.rs
+description: Completion on o (156..157)
+expression: "JsonRepr::new_pure(results)"
+input_file: crates/tinymist-query/src/fixtures/completion/label_scoped_named_later.typ
+---
+[
+ {
+  "isIncomplete": false,
+  "items": [
+   {
+    "kind": 18,
+    "label": "portique",
+    "sortText": "000",
+    "textEdit": {
+     "newText": "portique>",
+     "range": {
+      "end": {
+       "character": 18,
+       "line": 7
+      },
+      "start": {
+       "character": 17,
+       "line": 7
+      }
+     }
+    }
+   },
+   {
+    "kind": 18,
+    "label": "ouvrir",
+    "sortText": "001",
+    "textEdit": {
+     "newText": "ouvrir>",
+     "range": {
+      "end": {
+       "character": 18,
+       "line": 7
+      },
+      "start": {
+       "character": 17,
+       "line": 7
+      }
+     }
+    }
+   },
+   {
+    "kind": 18,
+    "label": "adherent",
+    "sortText": "002",
+    "textEdit": {
+     "newText": "adherent>",
+     "range": {
+      "end": {
+       "character": 18,
+       "line": 7
+      },
+      "start": {
+       "character": 17,
+       "line": 7
+      }
+     }
+    }
+   }
+  ]
+ }
+]

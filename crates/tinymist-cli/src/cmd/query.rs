@@ -131,6 +131,7 @@ pub fn default_analysis() -> Arc<Analysis> {
             _ => tinymist_query::ColorTheme::Light,
         },
         lint: config.lint.when().clone(),
+        label_definition_params: config.label_definition_params(),
         periscope: None,
         local_packages: Arc::default(),
         tokens_caches: Arc::default(),

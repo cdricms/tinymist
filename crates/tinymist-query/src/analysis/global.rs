@@ -88,6 +88,8 @@ pub struct Analysis {
     pub color_theme: ColorTheme,
     /// When to trigger the lint.
     pub lint: TaskWhen,
+    /// The parameters whose label arguments define a label.
+    pub label_definition_params: super::LabelDefinitionParams,
     /// The periscope provider.
     pub periscope: Option<Arc<dyn PeriscopeProvider + Send + Sync>>,
     /// The global worker resources for analysis.
@@ -508,7 +510,9 @@ impl LocalContext {
         source: &Source,
         known_issues: &KnownIssues,
     ) -> EcoVec<SourceDiagnostic> {
-        self.shared.lint(source, known_issues).diagnostics
+        let mut diagnostics = self.shared.lint(source, known_issues).diagnostics;
+        diagnostics.extend(super::label_diagnostics(&self.shared, source));
+        diagnostics
     }
 
     /// Get the type check information of a source file.

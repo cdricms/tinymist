@@ -184,6 +184,7 @@ impl ServerState {
                     _ => tinymist_query::ColorTheme::Light,
                 },
                 lint: config.lint.when().clone(),
+                label_definition_params: config.label_definition_params(),
                 periscope: periscope_args.map(|args| {
                     let r = TypstPeriscopeProvider(PeriscopeRenderer::new(args));
                     Arc::new(r) as Arc<dyn PeriscopeProvider + Send + Sync>

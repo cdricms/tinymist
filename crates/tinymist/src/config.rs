@@ -61,6 +61,7 @@ const CONFIG_ITEMS: &[&str] = &[
     "formatterIndentSize",
     "formatterProseWrap",
     "hoverPeriscope",
+    "labelDefinitionParams",
     "onEnter",
     "outputPath",
     "syntaxOnly",
@@ -133,6 +134,9 @@ pub struct Config {
     pub preview: PreviewFeat,
     /// Tinymist's lint features.
     pub lint: LintFeat,
+    /// The parameters whose label arguments define a label, like `name` in
+    /// `node((0, 0), [A], name: <a>)`. Defaults to `["name"]`.
+    pub label_definition_params: Option<Vec<String>>,
     /// Tinymist's on-enter features.
     pub on_enter: OnEnterFeat,
 
@@ -448,6 +452,7 @@ impl Config {
         assign_config!(output_path := "outputPath"?: PathPattern);
         assign_config!(preview := "preview"?: PreviewFeat);
         assign_config!(lint := "lint"?: LintFeat);
+        assign_config!(label_definition_params := "labelDefinitionParams"?: Option<Vec<String>>);
         assign_config!(semantic_tokens := "semanticTokens"?: SemanticTokensMode);
         assign_config!(delegate_fs_requests := "delegateFsRequests"?: bool);
         assign_config!(support_html_in_markdown := "supportHtmlInMarkdown"?: bool);
@@ -618,6 +623,16 @@ impl Config {
         } else {
             log::info!("Server: running lsp in full mode");
             SYNTAX_ONLY.store(false, std::sync::atomic::Ordering::SeqCst);
+        }
+    }
+
+    /// Gets the parameters whose label arguments define a label.
+    pub fn label_definition_params(&self) -> tinymist_query::LabelDefinitionParams {
+        match &self.label_definition_params {
+            Some(params) => {
+                tinymist_query::LabelDefinitionParams(params.iter().map(Into::into).collect())
+            }
+            None => Default::default(),
         }
     }
 
@@ -1708,6 +1723,8 @@ mod tests {
         test_good_config("lint");
         test_good_config("lint.enabled");
         test_good_config("lint.when");
+
+        test_good_config("labelDefinitionParams");
 
         test_good_config("preview");
         test_good_config("preview.browsing");
