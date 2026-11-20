@@ -1,0 +1,60 @@
+# Release builds of this fork: labels treated like variables, package errors
+# shown in the project. Pushing a tag `v…` builds the language server for Linux
+# and Windows and attaches it to a GitHub release. macOS builds are made locally.
+#
+# The upstream workflows are removed from this branch so that none of them runs
+# on the fork (some trigger on any tag, others on a schedule).
+name: Fork release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            asset: tinymist-linux-x64
+            bin: tinymist
+          - os: windows-latest
+            asset: tinymist-windows-x64.exe
+            bin: tinymist.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the toolchain from rust-toolchain.toml
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build --release --locked -p tinymist-cli
+      - name: Rename
+        shell: bash
+        run: mv "target/release/${{ matrix.bin }}" "${{ matrix.asset }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: ${{ matrix.asset }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --repo "${{ github.repository }}" \
+            --title "${{ github.ref_name }}" \
+            --notes "Build of tinymist with label completion, goto definition and lints, and package errors shown in the project." \
+            tinymist-linux-x64 tinymist-windows-x64.exe
