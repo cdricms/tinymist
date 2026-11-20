@@ -111,6 +111,9 @@ impl<'w> DiagWorker<'w> {
     pub fn handle(&mut self, diag: &TypstDiagnostic) {
         match self.convert_diagnostic(diag) {
             Ok((uri, diagnostic)) => {
+                if let Some((uri, copy)) = self.surface_in_project(diag, &uri, &diagnostic) {
+                    self.results.entry(uri).or_default().push(copy);
+                }
                 self.results.entry(uri).or_default().push(diagnostic);
             }
             Err(error) => {
@@ -165,6 +168,75 @@ impl<'w> DiagWorker<'w> {
         Ok((uri, diagnostic))
     }
 
+    /// Copies an error located in a package into the project, as editors
+    /// usually show the diagnostics of the open files only.
+    ///
+    /// Errors raised while laying out content made by a package (a diagram, a
+    /// table, …) often have no tracepoint in the project, since the project's
+    /// code already returned when the package's code runs. The copy goes to the
+    /// innermost tracepoint in the project, or else to the start of the main
+    /// file, and tells where the error comes from.
+    fn surface_in_project(
+        &self,
+        typst_diagnostic: &TypstDiagnostic,
+        uri: &Url,
+        diagnostic: &Diagnostic,
+    ) -> Option<(Url, Diagnostic)> {
+        let id = typst_diagnostic.span.id()?;
+        if typst_diagnostic.severity != TypstSeverity::Error
+            || !WorkspaceResolver::is_package_file(id)
+        {
+            return None;
+        }
+
+        let in_project = typst_diagnostic
+            .trace
+            .iter()
+            .map(|tracepoint| tracepoint.span)
+            .find(|span| {
+                span.id()
+                    .is_some_and(|id| !WorkspaceResolver::is_package_file(id))
+            });
+        let (target, span) = match in_project {
+            Some(span) => (span.id()?, span.into()),
+            None => {
+                let main = self.ctx.world().main();
+                if WorkspaceResolver::is_package_file(main) {
+                    return None;
+                }
+                (main, Span::detached().into())
+            }
+        };
+        let target_uri = self.ctx.uri_for_id(target).ok()?;
+        let source = self.ctx.source_by_id(target).ok()?;
+
+        let origin = self.ctx.source_by_id(id).ok().and_then(|source| {
+            let range = source_range(&source, typst_diagnostic.span)?;
+            let line = source.lines().byte_to_line(range.start)?;
+            Some(format!("{}:{}", package_file_name(id), line + 1))
+        });
+        let origin = origin.unwrap_or_else(|| package_file_name(id));
+
+        let mut related_information = vec![DiagnosticRelatedInformation {
+            location: LspLocation {
+                uri: uri.clone(),
+                range: diagnostic.range,
+            },
+            message: "the error is raised here".into(),
+        }];
+        related_information.extend(diagnostic.related_information.iter().flatten().cloned());
+
+        Some((
+            target_uri,
+            Diagnostic {
+                range: self.diagnostic_range(&source, span),
+                message: format!("[{origin}] {}", diagnostic.message),
+                related_information: Some(related_information),
+                ..diagnostic.clone()
+            },
+        ))
+    }
+
     fn to_related_info(
         &self,
         tracepoint: &Spanned<Tracepoint>,
@@ -204,6 +276,16 @@ impl<'w> DiagWorker<'w> {
             Some(range) => self.ctx.to_lsp_range(range, source),
             None => LspRange::new(LspPosition::new(0, 0), LspPosition::new(0, 0)),
         }
+    }
+}
+
+/// Names a package file like `@preview/fletcher:0.5.8/src/utils.typ`.
+fn package_file_name(id: TypstFileId) -> String {
+    match id.root() {
+        typst::syntax::VirtualRoot::Package(spec) => {
+            format!("{spec}/{}", id.vpath().get_without_slash())
+        }
+        typst::syntax::VirtualRoot::Project => id.vpath().get_with_slash().to_owned(),
     }
 }
 
